@@ -1,9 +1,11 @@
-package org.codingdojo.yatzy3;
+package org.codingdojo.yatzy3.strategies;
+
+import org.codingdojo.yatzy3.ScorerStrategy;
 
 import java.util.List;
 import java.util.Map;
 
-public class FullHouseScorer extends CategoryScorer {
+public class FullHouseScorerStrategy implements ScorerStrategy {
     @Override
     public int calculateScore(List<Integer> dice) {
         Map<Integer, Integer> frequencies = frequencies(dice);

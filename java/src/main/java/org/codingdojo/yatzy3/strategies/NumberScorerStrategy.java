@@ -1,11 +1,13 @@
-package org.codingdojo.yatzy3;
+package org.codingdojo.yatzy3.strategies;
+
+import org.codingdojo.yatzy3.ScorerStrategy;
 
 import java.util.List;
 
-public class NumberScorer extends CategoryScorer  {
+public class NumberScorerStrategy implements ScorerStrategy {
     private final int number;
 
-    public NumberScorer(int number) {
+    public NumberScorerStrategy(int number) {
         this.number = number;
     }
 

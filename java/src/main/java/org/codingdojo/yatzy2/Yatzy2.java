@@ -1,198 +1,121 @@
 package org.codingdojo.yatzy2;
 
+import org.codingdojo.StraightType;
 import org.codingdojo.YatzyCalculator;
 import org.codingdojo.YatzyCategory;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class Yatzy2 implements YatzyCalculator {
-    static final List<Integer> DICE_VALUES = Arrays.asList(6, 5, 4, 3, 2, 1);
+    private static final List<Integer> DICE_VALUES = List.of(6, 5, 4, 3, 2, 1);
+    public static final int YATZY_SCORE = 50;
 
+    private final Map<Integer, Integer> diceFrequencies = new HashMap<>();
 
-    @Override
-    public List<String> validCategories() {
-        return Arrays.stream(YatzyCategory.values()).map(Enum::toString).collect(Collectors.toList());
+    private void initialiseDiceFrequencies(List<Integer> dice) {
+        DICE_VALUES.forEach(die -> diceFrequencies.put(die, 0));
+
+        dice.forEach(die -> diceFrequencies.put(die, diceFrequencies.getOrDefault(die, 0) + 1));
     }
 
     @Override
-    public int score(List<Integer> dice, String categoryName) {
-        YatzyCategory category = YatzyCategory.valueOf(categoryName);
+    public int score(List<Integer> dice, YatzyCategory category) {
+        validateDice(dice);
+        initialiseDiceFrequencies(dice);
 
-        // calculate dice frequencies
-        HashMap<Integer, Integer> diceFrequencies = new HashMap<>();
-        for (int i : DICE_VALUES) {
-            diceFrequencies.put(i, 0);
-        }
-        for (int die : dice) {
-            diceFrequencies.put(die, diceFrequencies.get(die) + 1);
-        }
+        return switch (category) {
+            case CHANCE -> getSum(dice);
+            case YATZY -> calculateYatzy();
 
-        // calculate the score
-        int result;
-        switch (category) {
-            case CHANCE:
+            case ONES -> scoreNumber(1);
+            case TWOS -> scoreNumber(2);
+            case THREES -> scoreNumber(3);
+            case FOURS -> scoreNumber(4);
+            case FIVES -> scoreNumber(5);
+            case SIXES -> scoreNumber(6);
 
-                // chance sums the dice
-                result = dice.stream().mapToInt(Integer::intValue).sum();
-                break;
+            case PAIR -> calculateScoreForKind(2);
+            case THREE_OF_A_KIND -> calculateScoreForKind(3);
+            case FOUR_OF_A_KIND -> calculateScoreForKind(4);
 
-            case YATZY:
+            case SMALL_STRAIGHT -> calculateStraight(dice, StraightType.SMALL);
+            case LARGE_STRAIGHT -> calculateStraight(dice, StraightType.LARGE);
 
-                // score for yatzy if all dice are the same
-                int yatzyResult = 0;
-                if (diceFrequencies.containsValue(5)) {
-                    yatzyResult = 50;
-                }
-                result = yatzyResult;
-                break;
+            case TWO_PAIRS -> calculateTwoPairs();
 
-            case ONES:
-                // sum all the ones
-                result = diceFrequencies.get(1);
-                break;
-
-            case TWOS:
-                // sum all the twos
-                result = diceFrequencies.get(2) * 2;
-                break;
-
-            case THREES:
-                // sum all the threes
-                result = diceFrequencies.get(3) * 3;
-                break;
-
-            case FOURS:
-                // sum all the fours
-                result = diceFrequencies.get(4) * 4;
-                break;
-
-            case FIVES:
-                // sum all the fives
-                result = diceFrequencies.get(5) * 5;
-                break;
-
-            case SIXES:
-                // sum all the sixes
-                result = diceFrequencies.get(6) * 6;
-                break;
-
-            case PAIR:
-
-                // score pair if two dice are the same
-                int pairResult = 0;
-                // score highest pair if there is more than one
-                for (int i : DICE_VALUES) {
-                    if (diceFrequencies.get(i) >= 2) {
-                        pairResult = i * 2;
-                        break;
-                    }
-                }
-                result = pairResult;
-                break;
-
-            case THREE_OF_A_KIND:
-
-                // score if three dice are the same
-                int threeKindResult = 0;
-                for (int i : DICE_VALUES) {
-                    if (diceFrequencies.get(i) >= 3) {
-                        threeKindResult = i * 3;
-                        break;
-                    }
-                }
-                result = threeKindResult;
-                break;
-
-            case FOUR_OF_A_KIND:
-
-                // score if four dice are the same
-                int fourKindResult = 0;
-                for (int i : DICE_VALUES) {
-                    if (diceFrequencies.get(i) >= 4) {
-                        fourKindResult = i * 4;
-                        break;
-                    }
-                }
-                result = fourKindResult;
-                break;
-
-            case SMALL_STRAIGHT:
-
-                // score if dice contains 1,2,3,4,5
-                int smallStraightResult = 0;
-                long count = 0L;
-                for (Integer frequency : diceFrequencies.values()) {
-                    if (frequency == 1) {
-                        count++;
-                    }
-                }
-                if (count == 5 && diceFrequencies.get(6) == 0) {
-                    for (Integer die : dice) {
-                        smallStraightResult += die;
-                    }
-                }
-                result = smallStraightResult;
-                break;
-
-            case LARGE_STRAIGHT:
-
-                // score if dice contains 2,3,4,5,6
-                int largeStraightResult = 0;
-                long straightCount = 0L;
-                for (Integer frequency : diceFrequencies.values()) {
-                    if (frequency == 1) {
-                        straightCount++;
-                    }
-                }
-                if (straightCount == 5 && diceFrequencies.get(1) == 0) {
-                    for (Integer die : dice) {
-                        largeStraightResult += die;
-                    }
-                }
-                result = largeStraightResult;
-                break;
-
-            case TWO_PAIRS:
-
-                // score if there are two pairs
-                int twoPairResult = 0;
-                long pairCount = 0L;
-                for (Integer frequency : diceFrequencies.values()) {
-                    if (frequency >= 2) {
-                        pairCount++;
-                    }
-                }
-                if (pairCount == 2) {
-                    for (int i : DICE_VALUES) {
-                        if (diceFrequencies.get(i) >= 2) {
-                            twoPairResult += i * 2;
-                        }
-                    }
-                }
-                result = twoPairResult;
-                break;
-
-            case FULL_HOUSE:
-
-                // score if there is a pair as well as three of a kind
-                int fullHouseResult = 0;
-                if (diceFrequencies.containsValue(2) && diceFrequencies.containsValue(3)) {
-                    for (Integer die : dice) {
-                        fullHouseResult += die;
-                    }
-                }
-                result = fullHouseResult;
-                break;
-
-            default:
-                result = 0;
-        }
-        return result;
+            case FULL_HOUSE -> calculateFullHouse(dice);
+        };
     }
 
+    private int calculateYatzy() {
+        return diceFrequencies.containsValue(5) ? YATZY_SCORE : 0;
+    }
+
+    private void validateDice(List<Integer> dice) {
+        verifyValues(dice);
+        verifyLength(dice);
+    }
+
+    private void verifyValues(List<Integer> values) {
+        values.forEach((value) -> {
+            if (value < 1 || value > 6) {
+                throw new IllegalArgumentException("Dice values must be between 1 and 6");
+            }
+        });
+    }
+
+    private void verifyLength(List<Integer> values) {
+        if (values.size() != 5) {
+            throw new IllegalArgumentException("There must be 5 dice");
+        }
+    }
+
+    private int calculateFullHouse(List<Integer> dice) {
+        if (!diceFrequencies.containsValue(2) || !diceFrequencies.containsValue(3)) {
+            return 0;
+        }
+        return getSum(dice);
+    }
+
+    private int calculateTwoPairs() {
+        if (getNumberOfPairs() != 2) {
+            return 0;
+        }
+        return DICE_VALUES.stream().mapToInt(Integer::intValue).filter(die -> diceFrequencies.get(die) >= 2).sum() * 2;
+    }
+
+    private long getNumberOfPairs() {
+        return diceFrequencies.values().stream().filter(frequency -> frequency >= 2).count();
+    }
+
+    private int scoreNumber(int value) {
+        return diceFrequencies.get(value) * value;
+    }
+
+    private int calculateStraight(List<Integer> dice, StraightType straightType) {
+        if (getNumberOfUniqueValues() != 5 || diceFrequencies.get(straightType.getMissingDiceValue()) != 0) {
+            return 0;
+        }
+
+        return getSum(dice);
+    }
+
+    private static int getSum(List<Integer> dice) {
+        return dice.stream().mapToInt(Integer::intValue).sum();
+    }
+
+    private long getNumberOfUniqueValues() {
+        return diceFrequencies.values().stream().filter(frequency -> frequency == 1).count();
+    }
+
+    private int calculateScoreForKind(int kind) {
+        return DICE_VALUES.stream()
+            .filter(die -> diceFrequencies.getOrDefault(die, 0) >= kind)
+            .mapToInt(die -> die * kind)
+            .findFirst()
+            .orElse(0);
+    }
 }
 
